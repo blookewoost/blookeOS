@@ -96,20 +96,77 @@ impl Writer {
     }
 
     fn new_line(&mut self) {
-        // TODO!
+        // Shift everything up a row.
+        for row in 1..BUF_HEIGHT {
+            for col in 0..BUF_WIDTH {
+                let character = self.buffer.chars[row][col].read();
+                self.buffer.chars[row-1][col].write(character);
+            }
+        }
+
+        // Clear the top row.
+        self.clear_row(BUF_HEIGHT-1);
+        self.column_position = 0;
+    }
+
+    fn clear_row(&mut self, row: usize) {
+        let blank = ScreenChar {
+            ascii_char: b' ',
+            color_code: self.color_code,
+        };
+        for col in 0..BUF_WIDTH {
+            self.buffer.chars[row][col].write(blank);
+        }
     }
 }
 
 // temporary
-pub fn print_something() {
-    let mut writer = Writer {
-        column_position: 0,
-        color_code: ColorCode::new(Color::Green, Color::Black),
-        buffer: unsafe {&mut *(0xb8000 as *mut Buffer)},
-    };
-    writer.write_byte(b'S');
-    writer.write_string("hid");
-    writer.write_string(" pant");
+// pub fn print_something() {
+//     let mut writer = Writer {
+//         column_position: 0,
+//         color_code: ColorCode::new(Color::Green, Color::Black),
+//         buffer: unsafe {&mut *(0xb8000 as *mut Buffer)},
+//     };
+//     writer.write_byte(b'S');
+//     writer.write_string("hid");
+//     writer.write_string(" pant");
+// 
+//     write!(writer, "The nummies r {}, {}, and {}", 42, 34, 69).unwrap();
+// }
 
-    write!(writer, "The nummies r {}, {}, and {}", 42, 34, 69).unwrap();
+use lazy_static::lazy_static;
+use spin::Mutex;
+
+// Global instance of Writer for the terminal.
+lazy_static! {
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
+        column_position: 0,
+        color_code: ColorCode::new(Color::LightCyan, Color::Black),
+        buffer: unsafe {
+            {
+                &mut *(0xb8000 as *mut Buffer)
+            }
+        }
+    });
 }
+
+// Macro redefinitions to use our custom functions
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap();
+}
+
+
