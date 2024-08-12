@@ -2,6 +2,7 @@
 #![no_main] // Don't use the C runtime entry point.
 
 use core::panic::PanicInfo;
+mod vga_buffer;
 
 static HELLO: &[u8] = b"Hello World!";
 
