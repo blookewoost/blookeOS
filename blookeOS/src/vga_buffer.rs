@@ -40,15 +40,26 @@ struct ScreenChar {
 const BUF_HEIGHT: usize = 25;
 const BUF_WIDTH: usize = 80;
 
+use volatile::Volatile;
+
 #[repr(transparent)]
 struct Buffer {
-    chars: [[ScreenChar; BUF_WIDTH]; BUF_HEIGHT],
+    chars: [[Volatile<ScreenChar>; BUF_WIDTH]; BUF_HEIGHT],
 }
 
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode,
     buffer: &'static mut Buffer,
+}
+
+use core::fmt;
+
+impl fmt::Write for Writer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s);
+        Ok(())
+    }
 }
 
 impl Writer {
@@ -62,12 +73,13 @@ impl Writer {
 
                 let row = BUF_HEIGHT-1;
                 let col = self.column_position;
-
                 let color_code = self.color_code;
-                self.buffer.chars[row][col] = ScreenChar {
+
+                self.buffer.chars[row][col].write(ScreenChar{
                     ascii_char: byte,
-                    color_code
-                };
+                    color_code,
+                });
+
                 self.column_position += 1;
             }
         }
@@ -98,4 +110,6 @@ pub fn print_something() {
     writer.write_byte(b'S');
     writer.write_string("hid");
     writer.write_string(" pant");
+
+    write!(writer, "The nummies r {}, {}, and {}", 42, 34, 69).unwrap();
 }
