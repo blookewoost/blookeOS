@@ -137,6 +137,13 @@ lazy_static! {
     });
 }
 
+use crate::println;
+
+#[test_case]
+fn test_println() {
+    println!("println!() output.");
+}
+
 // Macro redefinitions to use our custom functions
 
 #[macro_export]
