@@ -120,19 +120,6 @@ impl Writer {
     }
 }
 
-// temporary
-// pub fn print_something() {
-//     let mut writer = Writer {
-//         column_position: 0,
-//         color_code: ColorCode::new(Color::Green, Color::Black),
-//         buffer: unsafe {&mut *(0xb8000 as *mut Buffer)},
-//     };
-//     writer.write_byte(b'S');
-//     writer.write_string("hid");
-//     writer.write_string(" pant");
-// 
-//     write!(writer, "The nummies r {}, {}, and {}", 42, 34, 69).unwrap();
-// }
 
 use lazy_static::lazy_static;
 use spin::Mutex;
