@@ -1,87 +1,45 @@
-#![no_std] // Disable automatic linking of the standard library
-#![no_main] // Don't use the C runtime entry point.
+/*
 
-// Enabling custom test frameworks with test runner
+Compiling for a baremetal target. Disable the following:
+    - The Rust standard library
+    - The typical C runtime entrypoint (There is no underlying OS, therefore no default entry point)
+
+Enable the custom_test_frameworks feature for our custom integration tests implementation, not relying on the standard library.
+Re-define the test harness entry point as our test_runner function (src/lib.rs)
+
+*/
+
+#![no_std]
+#![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
-
+#![test_runner(blooke_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
-mod vga_buffer;
-mod serial;
-
-
+use blooke_os;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    println!("Welcome to BlookeOS!");
-    println!("This is the worst operating system of all time!");
+    blooke_os::println!("Welcome to BlookeOS!");
 
     #[cfg(test)]
     test_main();
-
     loop {}
 }
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("Shid pant!");
-    println!("{}", info);
+    blooke_os::println!("Something went wrong, and I am too fragile to properly handle panic events!");
+    blooke_os::println!("{}", info);
     loop {}
 }
 
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    serial_println!("[failed]\n");
-    serial_println!("Error: {}\n", info);
-    exit_qemu(QemuExitCode::Failed);
-    loop {}
+    blooke_os::test_panic_handler(info);
 }
 
-#[cfg(test)]
-pub fn test_runner(tests: &[&dyn Testable]) {
-    serial_println!("Running {} tests", tests.len());
-    for test in tests {
-        test.run();
-    }
-    exit_qemu(QemuExitCode::Success);
-}
 
-#[test_case]
-fn trivial_assertion() {
-    assert_eq!(1,1);
-}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum QemuExitCode {
-    Success = 0x10,
-    Failed = 0x11,
-}
-
-pub fn exit_qemu(exit_code: QemuExitCode) {
-    use x86_64::instructions::port::Port;
-
-    unsafe {
-        let mut port = Port::new(0xf4);
-        port.write(exit_code as u32);
-    }
-}
-
-pub trait Testable {
-    fn run(&self) -> ();
-}
-
-impl<T> Testable for T
-where 
-    T: Fn(),
-    {
-        fn run(&self) {
-            serial_print!("{}...\t", core::any::type_name::<T>());
-            self();
-            serial_println!("[ok]");
-        }
-    }

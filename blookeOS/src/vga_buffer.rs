@@ -137,12 +137,19 @@ lazy_static! {
     });
 }
 
-use crate::println;
 
 #[test_case]
-fn test_println() {
-    println!("println!() output.");
+fn test_println_output() {
+    use crate::println;
+    let s = "Some test string that fits on a single line";
+    println!("{}", s);
+    for (i, c) in s.chars().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUF_HEIGHT - 2][i].read();
+        assert_eq!(char::from(screen_char.ascii_char), c);
+    }
 }
+
+
 
 // Macro redefinitions to use our custom functions
 
