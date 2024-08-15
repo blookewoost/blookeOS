@@ -2,7 +2,7 @@
 
 Compiling for a baremetal target. Disable the following:
     - The Rust standard library
-    - The typical C runtime entrypoint (There is no underlying OS, therefore no default entry point)
+    - The typical C runtime entrypoint (There is no underlying OS or runtime, therefore no default entry point)
 
 Enable the custom_test_frameworks feature for our custom integration tests implementation, not relying on the standard library.
 Re-define the test harness entry point as our test_runner function (src/lib.rs)

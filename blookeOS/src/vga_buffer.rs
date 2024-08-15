@@ -1,4 +1,9 @@
-#[allow(dead_code)]
+/* 
+
+VGA buffer implementation so that we can write characters to the screen in our custom OS.
+
+*/
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Color  {
