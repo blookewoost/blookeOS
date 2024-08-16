@@ -136,7 +136,8 @@ lazy_static! {
         color_code: ColorCode::new(Color::LightCyan, Color::Black),
         buffer: unsafe {
             {
-                &mut *(0xb8000 as *mut Buffer)
+                //   |-----------------------|      Dereference raw pointer at the VGA buffer memory location, putting the resulting data into a 'Buffer'    
+                &mut *(0xb8000 as *mut Buffer)  //  Then, borrow a mutable reference to that data. This will be the buffer that we can pass around and write to.
             }
         }
     });
@@ -155,9 +156,7 @@ fn test_println_output() {
 }
 
 
-
 // Macro redefinitions to use our custom functions
-
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
