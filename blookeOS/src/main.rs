@@ -22,16 +22,10 @@ pub extern "C" fn _start() -> ! {
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
-    fn stack_overflow() {
-        stack_overflow();
-    }
-
-    stack_overflow();
-
     #[cfg(test)]
+    #[allow(unconditional_recursion)] // Tests for the kernel involve intentional stack overflow. Silence the recursion warning.
     test_main();
 
-    blooke_os::println!("No crash!");
     loop {}
 }
 
