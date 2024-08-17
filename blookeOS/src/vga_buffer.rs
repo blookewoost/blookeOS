@@ -59,7 +59,6 @@ pub struct Writer {
 }
 
 use core::fmt;
-
 impl fmt::Write for Writer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.write_string(s);
@@ -146,13 +145,18 @@ lazy_static! {
 
 #[test_case]
 fn test_println_output() {
-    use crate::println;
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts;
     let s = "Some test string that fits on a single line";
-    println!("{}", s);
-    for (i, c) in s.chars().enumerate() {
-        let screen_char = WRITER.lock().buffer.chars[BUF_HEIGHT - 2][i].read();
-        assert_eq!(char::from(screen_char.ascii_char), c);
-    }
+
+    interrupts::without_interrupts(|| {
+        let mut writer = WRITER.lock();
+        writeln!(writer, "\n{}", s).expect("writeln failed!");
+        for (i, c) in s.chars().enumerate() {
+            let screen_char = writer.buffer.chars[BUF_HEIGHT - 2][i].read();
+            assert_eq!(char::from(screen_char.ascii_char), c);
+        }
+    });
 }
 
 
@@ -171,7 +175,12 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+
+    // Execute the closure in an interrupt-free environment to prevent deadlocks.
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap()
+    });
 }
 
 
