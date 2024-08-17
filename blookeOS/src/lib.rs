@@ -16,6 +16,7 @@ Since libraries are treated as a separate compilation unit, we specify our attri
 pub mod serial;
 pub mod vga_buffer;
 pub mod interrupts;
+pub mod gdt;
 use core::panic::PanicInfo;
 
 pub trait Testable {
@@ -67,6 +68,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 
 pub fn init() {
     interrupts::init_idt();
+    gdt::init();
 }
 
 

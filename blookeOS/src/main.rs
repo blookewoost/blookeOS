@@ -22,10 +22,11 @@ pub extern "C" fn _start() -> ! {
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
-    // trigger a page fault (accessing invalid memory)
-    unsafe {
-        *(0xbeebeebeebee as *mut u8) = 42;
+    fn stack_overflow() {
+        stack_overflow();
     }
+
+    stack_overflow();
 
     #[cfg(test)]
     test_main();
