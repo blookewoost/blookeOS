@@ -22,7 +22,10 @@ pub extern "C" fn _start() -> ! {
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
-    x86_64::instructions::interrupts::int3();
+    // trigger a page fault (accessing invalid memory)
+    unsafe {
+        *(0xbeebeebeebee as *mut u8) = 42;
+    }
 
     #[cfg(test)]
     test_main();
