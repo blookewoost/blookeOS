@@ -27,7 +27,7 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     blooke_os::println!("All seems well!");
-    loop {}
+    blooke_os::hlt_loop();
 }
 
 #[cfg(not(test))]
@@ -35,7 +35,7 @@ pub extern "C" fn _start() -> ! {
 fn panic(info: &PanicInfo) -> ! {
     blooke_os::println!("Something went wrong, and I am too fragile to properly handle panic events!");
     blooke_os::println!("{}", info);
-    loop {}
+    blooke_os::hlt_loop();
 }
 
 #[cfg(test)]

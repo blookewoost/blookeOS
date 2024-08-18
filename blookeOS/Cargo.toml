@@ -13,12 +13,13 @@ edition = "2021"
 
 
 [dependencies]
-bootloader = "0.9"
-volatile = "0.2.6"
-spin = "0.5.2"
-x86_64 = "0.14.2"
-uart_16550 = "0.2.0"
-pic8259 = "0.10.1"
+bootloader = "0.9" # Configures and links our kernel with a pre-existing bootloader
+volatile = "0.2.6" # Used for volatile buffer writes
+spin = "0.5.2" # Spinlock
+x86_64 = "0.14.2" # Tons of helpful stuff for the x86 architecture
+uart_16550 = "0.2.0" # Use this to read/write from the QEMU serial interface
+pic8259 = "0.10.1" # Programmable Interrupt Controllers
+pc-keyboard = "0.7.0" # Utilities for interpreting keyboard scancodes
 
 [dependencies.lazy_static]
 version = "1.0"
