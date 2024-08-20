@@ -1,5 +1,11 @@
-use core::usize;
+/* 
 
+Creating the Interrupt Descriptor Table and Programmable Interrupt Controller structures.
+Implements basic interrupts for breakpoints, double faults, page faults, the cpu timer, and the keyboard.
+
+*/
+
+use core::usize;
 use lazy_static::lazy_static;
 use crate::{gdt, hlt_loop};
 use x86_64::{registers::control::Cr2, structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode}};
@@ -25,6 +31,12 @@ pub fn init_idt() {
     IDT.load();
 }
 
+/* 
+
+Handler functions using the x86 CPU Interrupt calling convention
+
+*/
+
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("Exception: Breakpoint\n{:#?}", stack_frame);
 }
@@ -43,7 +55,7 @@ extern "x86-interrupt" fn page_fault_handler(stack_frame: InterruptStackFrame, e
 }
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    print!(".");
+    //print!(".");
 
     unsafe {
         PICS.lock().notify_end_of_interrupt(InterruptIndex::Timer.as_u8());

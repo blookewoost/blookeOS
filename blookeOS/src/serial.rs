@@ -1,3 +1,9 @@
+/*
+
+A serial interface for communication between our VM (running in QEMU) and our host operating system
+
+*/
+
 use uart_16550::SerialPort;
 use spin::Mutex;
 use lazy_static::lazy_static;
@@ -12,20 +18,18 @@ lazy_static! {
     };
 }
 
-// Fancy macro definitions
-
+// Locking and writing to the serial port in an interrupt-free environment.
 #[doc(hidden)]
 pub fn _print(args: ::core::fmt::Arguments) {
     use core::fmt::Write;
     use x86_64::instructions::interrupts;
 
-    // Execute the closure in an interrupt-free environment to prevent deadlocks.
     interrupts::without_interrupts(|| {
         SERIAL1.lock().write_fmt(args).expect("Printing to serial failed!")
     });
 }
 
-/// Prints to the host through the serial interface.
+// Prints to the host through the serial interface.
 #[macro_export]
 macro_rules! serial_print {
     ($($arg:tt)*) => {
@@ -33,7 +37,7 @@ macro_rules! serial_print {
     };
 }
 
-/// Prints to the host through the serial interface, appending a newline.
+// Prints to the host through the serial interface, appending a newline.
 #[macro_export]
 macro_rules! serial_println {
     () => ($crate::serial_print!("\n"));
