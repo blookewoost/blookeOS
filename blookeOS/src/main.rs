@@ -25,19 +25,28 @@ entry_point!(kernel_main);
 
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use blooke_os::memory::active_level_4_page_table;
-    use x86_64::VirtAddr;
+
+    use x86_64::{VirtAddr, structures::paging::Translate};
 
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
     let mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let l4_table = unsafe {active_level_4_page_table(mem_offset)};
+    let mapper = unsafe {
+        blooke_os::memory::init(mem_offset)
+    };
 
-    for (i, entry) in l4_table.iter().enumerate() {
-        if !entry.is_unused() {
-            println!("Level 4 Page Table entry {}: {:?}", i, entry);
-        }
+    let addresses = [
+        0xb8000, // VGA buffer page
+        0x201008, // code page
+        0x0100_0020_1a10, // stack page
+        boot_info.physical_memory_offset // virtual address mapped to physical address 0
+    ];
+
+    for &addr in &addresses {
+        let virt = VirtAddr::new(addr);
+        let phys = mapper.translate_addr(virt);
+        println!("{:?} => {:?}", virt, phys);
     }
 
     #[cfg(test)]
