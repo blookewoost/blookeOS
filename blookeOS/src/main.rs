@@ -16,17 +16,29 @@ Re-define the test harness entry point as our test_runner function (src/lib.rs)
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
+use bootloader::{BootInfo, entry_point};
 
 use blooke_os::println;
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+// Use the provided macro to identify the OS entry point for the bootloader.
+entry_point!(kernel_main);
+
+
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use blooke_os::memory::active_level_4_page_table;
+    use x86_64::VirtAddr;
+
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
-    use x86_64::registers::control::Cr3;
-    let (level_4_page_table, _) = Cr3::read();
-    println!("Level 4 page table at: {:?}", level_4_page_table.start_address());
+    let mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let l4_table = unsafe {active_level_4_page_table(mem_offset)};
+
+    for (i, entry) in l4_table.iter().enumerate() {
+        if !entry.is_unused() {
+            println!("Level 4 Page Table entry {}: {:?}", i, entry);
+        }
+    }
 
     #[cfg(test)]
     #[allow(unconditional_recursion)] // Tests for the kernel involve intentional stack overflow. Silence the recursion warning.

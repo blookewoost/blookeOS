@@ -13,7 +13,7 @@ edition = "2021"
 
 
 [dependencies]
-bootloader = "0.9" # Configures and links our kernel with a pre-existing bootloader
+bootloader = { version = "0.9", features = ["map_physical_memory"]} # Configures and links our kernel with a pre-existing bootloader
 volatile = "0.2.6" # Used for volatile buffer writes
 spin = "0.5.2" # Spinlock
 x86_64 = "0.14.2" # Tons of helpful stuff for the x86 architecture
