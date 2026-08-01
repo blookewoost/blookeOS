@@ -5,7 +5,6 @@ Implements basic interrupts for breakpoints, double faults, page faults, the cpu
 
 */
 
-use core::usize;
 use lazy_static::lazy_static;
 use crate::{gdt, hlt_loop};
 use x86_64::{registers::control::Cr2, structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode}};

@@ -18,35 +18,28 @@ Re-define the test harness entry point as our test_runner function (src/lib.rs)
 use core::panic::PanicInfo;
 use bootloader::{BootInfo, entry_point};
 
-use blooke_os::println;
+use blooke_os::{memory, println};
+use x86_64::structures::paging::Translate;
 
 // Use the provided macro to identify the OS entry point for the bootloader.
 entry_point!(kernel_main);
 
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-
-    use x86_64::{VirtAddr, structures::paging::Translate};
+    use x86_64::VirtAddr;
 
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
-    let mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe {
-        blooke_os::memory::init(mem_offset)
-    };
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mapper = unsafe { memory::init(phys_mem_offset) };
+    let addresses = [0xb8000, 0x201008, 0x0100_0020_1a10, boot_info.physical_memory_offset];
 
-    let addresses = [
-        0xb8000, // VGA buffer page
-        0x201008, // code page
-        0x0100_0020_1a10, // stack page
-        boot_info.physical_memory_offset // virtual address mapped to physical address 0
-    ];
 
-    for &addr in &addresses {
-        let virt = VirtAddr::new(addr);
-        let phys = mapper.translate_addr(virt);
-        println!("{:?} => {:?}", virt, phys);
+    for &address in &addresses {
+        let virt_addr = VirtAddr::new(address);
+        let phys_addr = mapper.translate_addr(virt_addr);
+        println!("Virtual Address: {:?} -> Physical Address: {:?}", virt_addr, phys_addr);
     }
 
     #[cfg(test)]
