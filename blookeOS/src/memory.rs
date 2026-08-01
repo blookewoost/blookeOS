@@ -1,5 +1,6 @@
 use x86_64::{structures::paging::PageTable, VirtAddr};
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn active_level_4_page_table(offset: VirtAddr) -> &'static PageTable {
     use x86_64::registers::control::Cr3;
 
@@ -12,6 +13,6 @@ pub unsafe fn active_level_4_page_table(offset: VirtAddr) -> &'static PageTable 
 
     // Return a mutable reference to a page table
     let page_table_ptr: *mut PageTable = virt_addr.as_mut_ptr();
-    return &mut *page_table_ptr;
+    &mut *page_table_ptr
 
 } 
