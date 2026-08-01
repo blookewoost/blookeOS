@@ -1,18 +1,21 @@
-use x86_64::{structures::paging::PageTable, VirtAddr};
+use x86_64::{ VirtAddr, structures::paging::{OffsetPageTable, PageTable}};
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe fn active_level_4_page_table(offset: VirtAddr) -> &'static PageTable {
+unsafe fn active_level_4_page_table(offset: VirtAddr) -> &'static mut PageTable {
     use x86_64::registers::control::Cr3;
-
-    // Find the level 4 page table by reading the Cr3 register.
     let (level_4_table_frame, _) = Cr3::read();
-
-    // Create a virtual address by applying our offset.
     let phys_addr = level_4_table_frame.start_address();
     let virt_addr = offset + phys_addr.as_u64();
 
-    // Return a mutable reference to a page table
     let page_table_ptr: *mut PageTable = virt_addr.as_mut_ptr();
     &mut *page_table_ptr
 
 } 
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
+    unsafe {
+        let level_4_table = active_level_4_page_table(physical_memory_offset);
+        OffsetPageTable::new(level_4_table, physical_memory_offset)
+    }
+}

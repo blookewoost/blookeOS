@@ -8,6 +8,7 @@ use core::panic::PanicInfo;
 use blooke_os::{println, test_panic_handler};
 
 #[no_mangle]
+#[allow(clippy::empty_loop)]
 pub extern "C" fn _start() -> ! {
     test_main();
     loop {}

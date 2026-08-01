@@ -18,63 +18,29 @@ Re-define the test harness entry point as our test_runner function (src/lib.rs)
 use core::panic::PanicInfo;
 use bootloader::{BootInfo, entry_point};
 
-use blooke_os::println;
+use blooke_os::{memory, println};
+use x86_64::structures::paging::Translate;
 
 // Use the provided macro to identify the OS entry point for the bootloader.
 entry_point!(kernel_main);
 
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use blooke_os::memory::active_level_4_page_table;
     use x86_64::VirtAddr;
-    use x86_64::structures::paging::PageTable;
 
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
 
-    let mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let l4_table = unsafe {active_level_4_page_table(mem_offset)};
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mapper = unsafe { memory::init(phys_mem_offset) };
+    let addresses = [0xb8000, 0x201008, 0x0100_0020_1a10, boot_info.physical_memory_offset];
 
-    for (i, entry) in l4_table.iter().enumerate() {
-        if !entry.is_unused() {
-            println!("Level 4 Page Table entry {}: {:?}", i, entry);
 
-            let phys_addr = entry.frame().unwrap().start_address();
-            let virt_addr = phys_addr.as_u64() + boot_info.physical_memory_offset;
-            let ptr = VirtAddr::new(virt_addr).as_mut_ptr();
-            let l3_table: &PageTable = unsafe { &*ptr };
-
-            for (i, entry) in l3_table.iter().enumerate() {
-                if !entry.is_unused() {
-                    println!("  Level 3 Page Table entry {}: {:?}", i, entry);
-
-                    let phys_addr = entry.frame().unwrap().start_address();
-                    let virt_addr = phys_addr.as_u64() + boot_info.physical_memory_offset;
-                    let ptr = VirtAddr::new(virt_addr).as_mut_ptr();
-                    let l2_table: &PageTable = unsafe { &*ptr };
-
-                    for (i, entry) in l2_table.iter().enumerate() {
-                        if !entry.is_unused() {
-                            println!("    Level 2 Page Table entry {}: {:?}", i, entry);
-
-                            let phys_addr = entry.frame().unwrap().start_address();
-                            let virt_addr = phys_addr.as_u64() + boot_info.physical_memory_offset;
-                            let ptr = VirtAddr::new(virt_addr).as_mut_ptr();
-                            let l1_table: &PageTable = unsafe { &*ptr };
-
-                            for (i, entry) in l1_table.iter().enumerate() {
-                                if !entry.is_unused() {
-                                    println!("      Level 1 Page Table entry {}: {:?}", i, entry);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
+    for &address in &addresses {
+        let virt_addr = VirtAddr::new(address);
+        let phys_addr = mapper.translate_addr(virt_addr);
+        println!("Virtual Address: {:?} -> Physical Address: {:?}", virt_addr, phys_addr);
     }
-
 
     #[cfg(test)]
     #[allow(unconditional_recursion)] // Tests for the kernel involve intentional stack overflow. Silence the recursion warning.
