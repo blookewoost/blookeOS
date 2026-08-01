@@ -27,6 +27,7 @@ entry_point!(kernel_main);
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use blooke_os::memory::active_level_4_page_table;
     use x86_64::VirtAddr;
+    use x86_64::structures::paging::PageTable;
 
     blooke_os::println!("Welcome to BlookeOS!");
     blooke_os::init();
@@ -37,8 +38,43 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     for (i, entry) in l4_table.iter().enumerate() {
         if !entry.is_unused() {
             println!("Level 4 Page Table entry {}: {:?}", i, entry);
+
+            let phys_addr = entry.frame().unwrap().start_address();
+            let virt_addr = phys_addr.as_u64() + boot_info.physical_memory_offset;
+            let ptr = VirtAddr::new(virt_addr).as_mut_ptr();
+            let l3_table: &PageTable = unsafe { &*ptr };
+
+            for (i, entry) in l3_table.iter().enumerate() {
+                if !entry.is_unused() {
+                    println!("  Level 3 Page Table entry {}: {:?}", i, entry);
+
+                    let phys_addr = entry.frame().unwrap().start_address();
+                    let virt_addr = phys_addr.as_u64() + boot_info.physical_memory_offset;
+                    let ptr = VirtAddr::new(virt_addr).as_mut_ptr();
+                    let l2_table: &PageTable = unsafe { &*ptr };
+
+                    for (i, entry) in l2_table.iter().enumerate() {
+                        if !entry.is_unused() {
+                            println!("    Level 2 Page Table entry {}: {:?}", i, entry);
+
+                            let phys_addr = entry.frame().unwrap().start_address();
+                            let virt_addr = phys_addr.as_u64() + boot_info.physical_memory_offset;
+                            let ptr = VirtAddr::new(virt_addr).as_mut_ptr();
+                            let l1_table: &PageTable = unsafe { &*ptr };
+
+                            for (i, entry) in l1_table.iter().enumerate() {
+                                if !entry.is_unused() {
+                                    println!("      Level 1 Page Table entry {}: {:?}", i, entry);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
+
 
     #[cfg(test)]
     #[allow(unconditional_recursion)] // Tests for the kernel involve intentional stack overflow. Silence the recursion warning.
